@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Election Commission</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>User Dashboard</h1>
+        <div id="userInfo"></div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h2>Voter ID Card</h2>
+                <p>Apply for a new voter ID card or check the status of your application.</p>
+                <button id="applyVoterIdBtn" class="btn">Apply for Voter ID</button>
+                <button id="checkVoterIdStatusBtn" class="btn">Check Status</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Voter ID Correction</h2>
+                <p>Request corrections for your voter ID card information.</p>
+                <button id="requestCorrectionBtn" class="btn">Request Correction</button>
+                <button id="checkCorrectionStatusBtn" class="btn">Check Correction Status</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Online Voting</h2>
+                <p>Cast your vote in ongoing elections.</p>
+                <button id="onlineVotingBtn" class="btn">Vote Online</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Election Information</h2>
+                <p>View upcoming elections and candidates.</p>
+                <button id="viewElectionsBtn" class="btn">View Elections</button>
+            </div>
+            <div class="dashboard-card"></div>
+                <h2>Election Results</h2>
+                <p>View the results of the latest election.</p>
+                <button id="viewResultsBtn" class="btn">View Results</button>
+            </div>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+    </div>
+
+    <!-- Voter ID Application Modal -->
+    <div id="voterIdModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Apply for Voter ID</h2>
+            <form id="voterIdForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="fatherName">Father's Name</label>
+                    <input type="text" id="fatherName" name="fatherName" required>
+                </div>
+                <div class="form-group">
+                    <label for="motherName">Mother's Name</label>
+                    <input type="text" id="motherName" name="motherName" required>
+                </div>
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob" name="dob" required>
+                </div>
+                <div class="form-group">
+                    <label for="mobileNumber">Mobile Number</label>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" required></textarea>
+                </div>
+                <button type="submit" class="btn">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Correction Request Modal -->
+    <div id="correctionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Request Voter ID Correction</h2>
+            <form id="correctionForm">
+                <div class="form-group">
+                    <label for="voterIdNumber">Voter ID Number</label>
+                    <input type="text" id="voterIdNumber" name="voterIdNumber" required>
+                </div>
+                <div class="form-group">
+                    <label for="correctionField">Field to Correct</label>
+                    <select id="correctionField" name="correctionField" required>
+                        <option value="">Select field</option>
+                        <option value="name">Name</option>
+                        <option value="fatherName">Father's Name</option>
+                        <option value="motherName">Mother's Name</option>
+                        <option value="dob">Date of Birth</option>
+                        <option value="address">Address</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="correctionValue">Correct Value</label>
+                    <input type="text" id="correctionValue" name="correctionValue" required>
+                </div>
+                <button type="submit" class="btn">Submit Correction Request</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Voting Modal -->
+    <div id="votingModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Cast Your Vote</h2>
+            <form id="votingForm">
+                <div id="candidatesList"></div>
+                <button type="submit" id="submitVoteBtn" class="btn">Submit Vote</button>
+            </form>
+        </div>
+    </div>
+
+   <!-- View Results Modal -->
+   <div id="viewResultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Election Results</h2>
+        <div id="electionResultsContent"></div>
+    </div>
+</div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

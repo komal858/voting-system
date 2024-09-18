@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Dashboard - Election Commission</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Officer Dashboard</h1>
+        <div id="officerInfo"></div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h2>Manage Voter ID Applications</h2>
+                <p>Review and approve/decline voter ID card applications.</p>
+                <button id="manageVoterIdBtn" class="btn">Manage Applications</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Manage Voter ID Corrections</h2>
+                <p>Review and approve/decline voter ID correction requests.</p>
+                <button id="manageCorrectionsBtn" class="btn">Manage Corrections</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Manage Candidates</h2>
+                <p>Add or remove candidates for upcoming elections.</p>
+                <button id="manageCandidatesBtn" class="btn">Manage Candidates</button>
+            </div>
+            <div class="dashboard-card">
+                <h2>Generate Voter ID</h2>
+                <p>Generate and issue voter ID cards for approved applications.</p>
+                <button id="generateVoterIdBtn" class="btn">Generate Voter ID</button>
+            </div>
+            <div class="dashboard-card"></div>
+                <h2>Declare Election Results</h2>
+                <p>View vote counts and declare the election winner.</p>
+                <button id="declareResultsBtn" class="btn">Declare Results</button>
+            </div>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+    </div>
+
+    <!-- Manage Voter ID Applications Modal -->
+    <div id="manageVoterIdModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Manage Voter ID Applications</h2>
+            <div id="voterIdApplicationsList"></div>
+        </div>
+    </div>
+
+    <!-- Manage Corrections Modal -->
+    <div id="manageCorrectionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Manage Voter ID Corrections</h2>
+            <div id="voterIdCorrectionsList"></div>
+        </div>
+    </div>
+
+    <!-- Manage Candidates Modal -->
+    <div id="manageCandidatesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Manage Candidates</h2>
+            <div id="candidatesList"></div>
+            <form id="addCandidateForm">
+                <input type="text" id="candidateName" placeholder="Candidate Name" required>
+                <input type="text" id="candidateParty" placeholder="Party" required>
+                <button type="submit" class="btn">Add Candidate</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Generate Voter ID Modal -->
+    <div id="generateVoterIdModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Generate Voter ID</h2>
+            <div id="approvedApplicationsList"></div>
+        </div>
+    </div>
+
+    <!-- Declare Results Modal -->
+    <div id="declareResultsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Declare Election Results</h2>
+            <div id="voteCountsList"></div>
+            <button id="declareWinnerBtn" class="btn btn-success">Declare Winner</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

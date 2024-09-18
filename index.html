@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election System - Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loadingOverlay" class="loading">
+        <p>Loading...</p>
+    </div>
+    <div class="container">
+        <h1>Welcome to the Election System</h1>
+        <div id="authButtons" class="button-container">
+            <a href="user-login.html" class="button">User Login</a>
+            <a href="user-register.html" class="button">User Register</a>
+            <a href="officer-login.html" class="button">Officer Login</a>
+            <a href="officer-register.html" class="button">Officer Register</a>
+        </div>
+        <div id="userInfo" class="user-info" style="display: none;">
+            <p>Welcome, <span id="userName"></span>!</p>
+            <p>Role: <span id="userRole"></span></p>
+            <a href="#" id="dashboardLink" class="button">Go to Dashboard</a>
+            <button id="logoutBtn" class="button">Logout</button>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyCaJVzCC3AS-FVj6HV85Ha8cIDko-HdgGo",
+    authDomain: "voting-96a43.firebaseapp.com",
+    projectId: "voting-96a43",
+    storageBucket: "voting-96a43.appspot.com",
+    messagingSenderId: "173608274109",
+    appId: "1:173608274109:web:2abea9f0f45c09d6f78fd4"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const authButtons = document.getElementById('authButtons');
+            const userInfo = document.getElementById('userInfo');
+            const userName = document.getElementById('userName');
+            const userRole = document.getElementById('userRole');
+            const dashboardLink = document.getElementById('dashboardLink');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            loadingOverlay.classList.add('active');
+
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists) {
+                                const userData = doc.data();
+                                userName.textContent = userData.name;
+                                userRole.textContent = userData.role;
+                                dashboardLink.href = userData.role === 'user' ? 'user-dashboard.html' : 'officer-dashboard.html';
+                                authButtons.style.display = 'none';
+                                userInfo.style.display = 'block';
+                            } else {
+                                console.error('User document does not exist');
+                                showAlert('Error loading user data. Please try again.', 'error');
+                                auth.signOut();
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error getting user data:', error);
+                            showAlert('Error loading user data. Please try again.', 'error');
+                            auth.signOut();
+                        })
+                        .finally(() => {
+                            loadingOverlay.classList.remove('active');
+                        });
+                } else {
+                    authButtons.style.display = 'block';
+                    userInfo.style.display = 'none';
+                    loadingOverlay.classList.remove('active');
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut()
+                    .then(() => {
+                        showAlert('Logged out successfully', 'success');
+                        authButtons.style.display = 'block';
+                        userInfo.style.display = 'none';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                        showAlert('Error signing out. Please try again.', 'error');
+                    });
+            });
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

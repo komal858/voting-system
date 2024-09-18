@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter ID Application - Election System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Election System</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="user-dashboard.html" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="voter-id-application.html" class="nav-link">Apply for Voter ID</a></li>
+                    <li class="nav-item"><a href="user-profile.html" class="nav-link">Profile</a></li>
+                    <li class="nav-item"><a href="#" id="logoutBtn" class="nav-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Voter ID Application</h1>
+        <form id="voterIdApplicationForm" class="card">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <button type="submit" class="button">Submit Application</button>
+        </form>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyCaJVzCC3AS-FVj6HV85Ha8cIDko-HdgGo",
+    authDomain: "voting-96a43.firebaseapp.com",
+    projectId: "voting-96a43",
+    storageBucket: "voting-96a43.appspot.com",
+    messagingSenderId: "173608274109",
+    appId: "1:173608274109:web:2abea9f0f45c09d6f78fd4"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const voterIdApplicationForm = document.getElementById('voterIdApplicationForm');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
+                    // Redirect to login page if not authenticated
+                    window.location.href = 'user-login.html';
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut()
+                    .then(() => {
+                        showAlert('Logged out successfully', 'success');
+                        window.location.href = 'index.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                        showAlert('Error signing out. Please try again.', 'error');
+                    });
+            });
+
+            voterIdApplicationForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                loadingOverlay.style.display = 'flex';
+
+                const user = auth.currentUser;
+                if (user) {
+                    const applicationData = {
+                        name: voterIdApplicationForm['name'].value,
+                        dob: voterIdApplicationForm['dob'].value,
+                        address: voterIdApplicationForm['address'].value,
+                        phone: voterIdApplicationForm['phone'].value,
+                        userId: user.uid,
+                        status: 'Pending',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    db.collection('voterIdApplications').add(applicationData)
+                        .then(() => {
+                            showAlert('Voter ID application submitted successfully', 'success');
+                            voterIdApplicationForm.reset();
+                        })
+                        .catch((error) => {
+                            console.error('Error submitting application:', error);
+                            showAlert('Error submitting application. Please try again.', 'error');
+                        })
+                        .finally(() => {
+                            loadingOverlay.style.display = 'none';
+                        });
+                } else {
+                    showAlert('You must be logged in to submit an application.', 'error');
+                    loadingOverlay.style.display = 'none';
+                }
+            });
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>

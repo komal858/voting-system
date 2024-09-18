@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Elections - Election System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Election System</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="officer-dashboard.html" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="manage-applications.html" class="nav-link">Manage Applications</a></li>
+                    <li class="nav-item"><a href="manage-elections.html" class="nav-link">Manage Elections</a></li>
+                    <li class="nav-item"><a href="officer-profile.html" class="nav-link">Profile</a></li>
+                    <li class="nav-item"><a href="#" id="logoutBtn" class="nav-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Manage Elections</h1>
+        <button id="createElectionBtn" class="button">Create New Election</button>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Election Name</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="electionsList">
+                    <!-- Election rows will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="createElectionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Election</h2>
+            <form id="createElectionForm">
+                <div class="form-group">
+                    <label for="electionName">Election Name</label>
+                    <input type="text" id="electionName" name="electionName" required>
+                </div>
+                <div class="form-group">
+                    <label for="electionDate">Election Date</label>
+                    <input type="date" id="electionDate" name="electionDate" required>
+                </div>
+                <button type="submit" class="button">Create Election</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyCaJVzCC3AS-FVj6HV85Ha8cIDko-HdgGo",
+    authDomain: "voting-96a43.firebaseapp.com",
+    projectId: "voting-96a43",
+    storageBucket: "voting-96a43.appspot.com",
+    messagingSenderId: "173608274109",
+    appId: "1:173608274109:web:2abea9f0f45c09d6f78fd4"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const electionsList = document.getElementById('electionsList');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const createElectionBtn = document.getElementById('createElectionBtn');
+            const createElectionModal = document.getElementById('createElectionModal');
+            const createElectionForm = document.getElementById('createElectionForm');
+            const closeModal = document.getElementsByClassName('close')[0];
+
+            loadingOverlay.style.display = 'flex';
+
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Verify if the user is an officer
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists && doc.data().role === 'officer') {
+                                fetchElections();
+                            } else {
+                                console.error('User is not an officer');
+                                showAlert('Access denied. You must be an officer to view this page.', 'error');
+                                auth.signOut().then(() => {
+                                    window.location.href = 'index.html';
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error verifying officer status:', error);
+                            showAlert('Error verifying your status. Please try again.', 'error');
+                        })
+                        .finally(() => {
+                            loadingOverlay.style.display = 'none';
+                        });
+                } else {
+                    // Redirect to login page if not authenticated
+                    window.location.href = 'officer-login.html';
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut()
+                    .then(() => {
+                        showAlert('Logged out successfully', 'success');
+                        window.location.href = 'index.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                        showAlert('Error signing out. Please try again.', 'error');
+                    });
+            });
+
+            createElectionBtn.addEventListener('click', () => {
+                createElectionModal.style.display = 'block';
+            });
+
+            closeModal.addEventListener('click', () => {
+                createElectionModal.style.display = 'none';
+            });
+
+            createElectionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const electionName = createElectionForm['electionName'].value;
+                const electionDate = createElectionForm['electionDate'].value;
+
+                db.collection('elections').add({
+                    name: electionName,
+                    date: new Date(electionDate),
+                    status: 'Upcoming',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                    showAlert('Election created successfully', 'success');
+                    createElectionForm.reset();
+                    createElectionModal.style.display = 'none';
+                    fetchElections();
+                })
+                .catch((error) => {
+                    console.error('Error creating election:', error);
+                    showAlert('Error creating election. Please try again.', 'error');
+                });
+            });
+
+            function fetchElections() {
+                db.collection('elections').orderBy('date', 'desc').get()
+                    .then((querySnapshot) => {
+                        electionsList.innerHTML = '';
+                        querySnapshot.forEach((doc) => {
+                            const election = doc.data();
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${election.name}</td>
+                                <td>${election.date.toDate().toLocaleDateString()}</td>
+                                <td>${election.status}</td>
+                                <td>
+                                    <button onclick="manageElection('${doc.id}')" class="button button-small">Manage</button>
+                                </td>
+                            `;
+                            electionsList.appendChild(row);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching elections:', error);
+                        showAlert('Error loading elections. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        loadingOverlay.style.display = 'none';
+                    });
+            }
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+
+        function manageElection(electionId) {
+            // Redirect to the election management page
+            window.location.href = `manage-election-details.html?id=${electionId}`;
+        }
+    </script>
+</body>
+</html>

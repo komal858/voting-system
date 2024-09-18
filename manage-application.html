@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Applications - Election System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Election System</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="officer-dashboard.html" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="manage-applications.html" class="nav-link">Manage Applications</a></li>
+                    <li class="nav-item"><a href="manage-elections.html" class="nav-link">Manage Elections</a></li>
+                    <li class="nav-item"><a href="officer-profile.html" class="nav-link">Profile</a></li>
+                    <li class="nav-item"><a href="#" id="logoutBtn" class="nav-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Manage Applications</h1>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Application Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="applicationsList">
+                    <!-- Application rows will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyCaJVzCC3AS-FVj6HV85Ha8cIDko-HdgGo",
+    authDomain: "voting-96a43.firebaseapp.com",
+    projectId: "voting-96a43",
+    storageBucket: "voting-96a43.appspot.com",
+    messagingSenderId: "173608274109",
+    appId: "1:173608274109:web:2abea9f0f45c09d6f78fd4"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const applicationsList = document.getElementById('applicationsList');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            loadingOverlay.style.display = 'flex';
+
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Verify if the user is an officer
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists && doc.data().role === 'officer') {
+                                fetchApplications();
+                            } else {
+                                console.error('User is not an officer');
+                                showAlert('Access denied. You must be an officer to view this page.', 'error');
+                                auth.signOut().then(() => {
+                                    window.location.href = 'index.html';
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error verifying officer status:', error);
+                            showAlert('Error verifying your status. Please try again.', 'error');
+                        })
+                        .finally(() => {
+                            loadingOverlay.style.display = 'none';
+                        });
+                } else {
+                    // Redirect to login page if not authenticated
+                    window.location.href = 'officer-login.html';
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut()
+                    .then(() => {
+                        showAlert('Logged out successfully', 'success');
+                        window.location.href = 'index.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                        showAlert('Error signing out. Please try again.', 'error');
+                    });
+            });
+
+            function fetchApplications() {
+                db.collection('voterIdApplications').orderBy('createdAt', 'desc').get()
+                    .then((querySnapshot) => {
+                        applicationsList.innerHTML = '';
+                        querySnapshot.forEach((doc) => {
+                            const application = doc.data();
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${application.name}</td>
+                                <td>${application.createdAt.toDate().toLocaleDateString()}</td>
+                                <td>${application.status}</td>
+                                <td>
+                                    <button onclick="reviewApplication('${doc.id}')" class="button button-small">Review</button>
+                                </td>
+                            `;
+                            applicationsList.appendChild(row);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching applications:', error);
+                        showAlert('Error loading applications. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        loadingOverlay.style.display = 'none';
+                    });
+            }
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+
+        function reviewApplication(applicationId) {
+            // Redirect to the application review page
+            window.location.href = `review-application.html?id=${applicationId}`;
+        }
+    </script>
+</body>
+</html>

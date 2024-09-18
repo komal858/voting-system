@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officer Profile - Election System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">Election System</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="officer-dashboard.html" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="manage-applications.html" class="nav-link">Manage Applications</a></li>
+                    <li class="nav-item"><a href="manage-elections.html" class="nav-link">Manage Elections</a></li>
+                    <li class="nav-item"><a href="officer-profile.html" class="nav-link">Profile</a></li>
+                    <li class="nav-item"><a href="#" id="logoutBtn" class="nav-link">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1>Officer Profile</h1>
+        <div class="card">
+            <div id="profileInfo">
+                <!-- Profile information will be dynamically added here -->
+            </div>
+            <button id="editProfileBtn" class="button">Edit Profile</button>
+        </div>
+    </main>
+
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Profile</h2>
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="officerId">Officer ID</label>
+                    <input type="text" id="officerId" name="officerId" required>
+                </div>
+                <button type="submit" class="button">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyCaJVzCC3AS-FVj6HV85Ha8cIDko-HdgGo",
+    authDomain: "voting-96a43.firebaseapp.com",
+    projectId: "voting-96a43",
+    storageBucket: "voting-96a43.appspot.com",
+    messagingSenderId: "173608274109",
+    appId: "1:173608274109:web:2abea9f0f45c09d6f78fd4"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const profileInfo = document.getElementById('profileInfo');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const editProfileModal = document.getElementById('editProfileModal');
+            const editProfileForm = document.getElementById('editProfileForm');
+            const closeModal = document.getElementsByClassName('close')[0];
+
+            loadingOverlay.style.display = 'flex';
+
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Verify if the user is an officer
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists && doc.data().role === 'officer') {
+                                displayProfile(doc.data());
+                            } else {
+                                console.error('User is not an officer');
+                                showAlert('Access denied. You must be an officer to view this page.', 'error');
+                                auth.signOut().then(() => {
+                                    window.location.href = 'index.html';
+                                });
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error verifying officer status:', error);
+                            showAlert('Error verifying your status. Please try again.', 'error');
+                        })
+                        .finally(() => {
+                            loadingOverlay.style.display = 'none';
+                        });
+                } else {
+                    // Redirect to login page if not authenticated
+                    window.location.href = 'officer-login.html';
+                }
+            });
+
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut()
+                    .then(() => {
+                        showAlert('Logged out successfully', 'success');
+                        window.location.href = 'index.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                        showAlert('Error signing out. Please try again.', 'error');
+                    });
+            });
+
+            editProfileBtn.addEventListener('click', () => {
+                editProfileModal.style.display = 'block';
+                const user = auth.currentUser;
+                if (user) {
+                    db.collection('users').doc(user.uid).get()
+                        .then((doc) => {
+                            if (doc.exists) {
+                                const data = doc.data();
+                                editProfileForm['name'].value = data.name;
+                                editProfileForm['email'].value = data.email;
+                                editProfileForm['officerId'].value = data.officerId;
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching user data:', error);
+                            showAlert('Error loading user data. Please try again.', 'error');
+                        });
+                }
+            });
+
+            closeModal.addEventListener('click', () => {
+                editProfileModal.style.display = 'none';
+            });
+
+            editProfileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const user = auth.currentUser;
+                if (user) {
+                    const updatedData = {
+                        name: editProfileForm['name'].value,
+                        email: editProfileForm['email'].value,
+                        officerId: editProfileForm['officerId'].value
+                    };
+
+                    db.collection('users').doc(user.uid).update(updatedData)
+                        .then(() => {
+                            showAlert('Profile updated successfully', 'success');
+                            editProfileModal.style.display = 'none';
+                            displayProfile(updatedData);
+                        })
+                        .catch((error) => {
+                            console.error('Error updating profile:', error);
+                            showAlert('Error updating profile. Please try again.', 'error');
+                        });
+                }
+            });
+
+            function displayProfile(data) {
+                profileInfo.innerHTML = `
+                    <h2>${data.name}</h2>
+                    <p><strong>Email:</strong> ${data.email}</p>
+                    <p><strong>Officer ID:</strong> ${data.officerId}</p>
+                    <p><strong>Role:</strong> ${data.role}</p>
+                `;
+            }
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
